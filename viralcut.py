@@ -128,8 +128,10 @@ if page == "STUDIO DE CRÉATION":
     col_input, col_info = st.columns([2, 1])
     
     with col_input:
-        source_type = st.segmented_control("TYPE DE SOURCE", ["Lien Web", "Fichier Local"], default="Lien Web")
+        # ICI : Remplacement de segmented_control par radio horizontal pour stopper l'erreur 'removeChild'
+        source_type = st.radio("TYPE DE SOURCE", ["Lien Web", "Fichier Local"], horizontal=True)
         
+        video_input_path = None # Sécurité
         if source_type == "Lien Web":
             url_input = st.text_input("🔗 LIEN YOUTUBE, TIKTOK OU INSTAGRAM", placeholder="Collez l'URL ici...")
         else:
@@ -141,11 +143,11 @@ if page == "STUDIO DE CRÉATION":
     with col_info:
         st.info("💡 **ASTUCE :** L'IA détecte automatiquement les changements de sujet.")
 
-    # Zone pour les messages d'erreurs/succès stable
     placeholder_msg = st.empty()
 
     if st.button("LANCER LA PRODUCTION"):
-        source_ready = (source_type == "Lien Web" and url_input) or (source_type == "Fichier Local" and 'video_input_path' in locals())
+        # Correction de la vérification pour éviter l'erreur NameError
+        source_ready = (source_type == "Lien Web" and url_input) or (source_type == "Fichier Local" and video_input_path is not None)
         
         if not source_ready:
             placeholder_msg.warning("VEUILLEZ SÉLECTIONNER UNE VIDÉO.")
@@ -154,24 +156,19 @@ if page == "STUDIO DE CRÉATION":
             try:
                 with st.status("PRODUCTION EN COURS...", expanded=True) as status:
                     
-                    # 1. DOWNLOAD
                     if source_type == "Lien Web":
                         st.write("📥 TÉLÉCHARGEMENT DE LA SOURCE...")
                         video_input_path = downloader.telecharger(url_input)
                     
-                    # 2. TRANSCRIPTION
                     st.write("👂 ANALYSE VOCALE (WHISPER IA)...")
                     words_data = transcriber.transcrire(video_input_path)
                     
-                    # 3. INTELLIGENCE
                     st.write("🧠 DÉTECTION DES PÉPITES VIRALES...")
                     suggestions = intel.detecter_meilleurs_moments(words_data)[:num_clips]
 
-                    # 4. MONTAGE
                     st.write("🎥 RENDU DES CLIPS VERTICAUX...")
                     clip_source = VideoFileClip(video_input_path)
                     
-                    # On prépare la grille de résultats APRES le rendu
                     results_container = st.container()
                     
                     for i, moment in enumerate(suggestions):
@@ -179,11 +176,9 @@ if page == "STUDIO DE CRÉATION":
                         start_t = moment['start']
                         end_t = min(moment['start'] + target_duration, clip_source.duration)
                         
-                        # PROCESSING
                         base = clip_source.subclipped(start_t, end_t).resized(height=config.VIDEO_HEIGHT)
                         base = base.cropped(x_center=base.w/2, y_center=base.h/2, width=config.VIDEO_WIDTH, height=config.VIDEO_HEIGHT)
                         
-                        # SOUS-TITRES
                         words_ext = [w.copy() for w in words_data if w['start'] >= start_t and w['end'] <= end_t]
                         for w in words_ext: 
                             w['start'] -= start_t
@@ -195,7 +190,8 @@ if page == "STUDIO DE CRÉATION":
                         out_name = f"viral_{int(time.time())}_{i+1}.mp4"
                         out_path = os.path.join("exports", out_name)
                         
-                        final.write_videofile(out_path, fps=config.VIDEO_FPS, codec=config.VIDEO_CODEC, audio_codec="aac", temp_audiofile='temp-audio.m4a', remove_temp=True)
+                        # Ajout d'un nom de fichier audio unique par clip pour éviter les conflits
+                        final.write_videofile(out_path, fps=config.VIDEO_FPS, codec=config.VIDEO_CODEC, audio_codec="aac", temp_audiofile=f'temp-audio-{i}.m4a', remove_temp=True)
                         
                         with results_container:
                             st.divider()
