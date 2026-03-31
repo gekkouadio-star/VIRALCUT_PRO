@@ -1,0 +1,24 @@
+# --- ENVIRONNEMENTS VIRTUELS ---
+env/
+env_pro/
+venv/
+.env
+
+# --- DOSSIERS DE TRAVAIL ---
+# On garde les dossiers mais on ignore le contenu vidéo
+inputs/*
+exports/*
+!inputs/.gitkeep
+!exports/.gitkeep
+
+# --- CACHE ET SYSTÈME ---
+__pycache__/
+*.pyc
+.DS_Store
+.streamlit/
+.vscode/
+
+# --- FICHIERS TEMPORAIRES IA ---
+*.mp3
+*.wav
+*.tmp
