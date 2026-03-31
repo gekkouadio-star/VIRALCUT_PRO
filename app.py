@@ -38,6 +38,7 @@ st.markdown("""
         background-color: #ffffff; 
         border-right: 1px solid #e0e0e0; 
     }
+    
     /* Style pour l'encadré vert du titre */
     .green-header {
         border: 2px solid #28a745;
@@ -46,19 +47,42 @@ st.markdown("""
         color: #28a745;
         display: flex;
         justify-content: center;
-        align-items: baseline;
-        gap: 20px;
+        align-items: center;
+        gap: 15px;
         margin-bottom: 25px;
         background-color: rgba(40, 167, 69, 0.1);
+        flex-wrap: wrap; /* Permet au nom de passer dessous sur petit écran */
     }
     .green-header h1 {
         margin: 0;
         color: #28a745;
+        font-size: 2rem;
     }
     .developer-name {
-        font-size: 1.2em;
+        font-size: 1.1em;
         font-weight: bold;
         opacity: 0.8;
+        white-space: nowrap;
+    }
+
+    /* --- AJUSTEMENTS SPÉCIFIQUES MOBILE --- */
+    @media (max-width: 768px) {
+        .green-header {
+            padding: 10px;
+            flex-direction: column; /* Titre et Nom l'un sur l'autre sur mobile */
+            gap: 5px;
+        }
+        .green-header h1 {
+            font-size: 1.4rem; /* Titre plus petit pour pas qu'il coupe */
+            text-align: center;
+        }
+        .developer-name {
+            font-size: 0.9em;
+            text-align: center;
+        }
+        .stButton>button {
+            height: 3.5em; /* Bouton plus gros pour le pouce */
+        }
     }
     </style>
     """, unsafe_allow_html=True)
