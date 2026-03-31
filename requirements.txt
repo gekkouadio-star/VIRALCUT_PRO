@@ -1,25 +1,18 @@
-# --- COEUR DU SAAS ---
-streamlit==1.42.0
+streamlit
 python-dotenv
 requests
-
-# --- MOTEUR VIDÉO & AUDIO ---
-moviepy==2.1.1
+moviepy
 imageio-ffmpeg
 ffmpeg-python
 yt-dlp
 Pillow
-
-# --- INTELLIGENCE ARTIFICIELLE & DATA ---
 openai-whisper
 openai
-torch
-torchvision
-torchaudio
+torch --index-url https://download.pytorch.org/whl/cpu
+torchvision --index-url https://download.pytorch.org/whl/cpu
+torchaudio --index-url https://download.pytorch.org/whl/cpu
 numpy<2.0.0
 pandas
 tiktoken
-
-# --- TRAITEMENT D'IMAGE & TRACKING ---
 opencv-python-headless
 mediapipe

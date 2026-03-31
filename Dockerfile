@@ -1,7 +1,7 @@
-# On part d'une base Python stable
+# 1. Utiliser une version stable de Python
 FROM python:3.11-slim
 
-# On installe les dépendances système (FFmpeg, etc.)
+# 2. Installer FFmpeg et les bibliothèques système nécessaires
 RUN apt-get update && apt-get install -y \
     ffmpeg \
     libsm6 \
@@ -9,15 +9,17 @@ RUN apt-get update && apt-get install -y \
     libgl1-mesa-glx \
     && rm -rf /var/lib/apt/lists/*
 
-# On prépare le dossier de travail
+# 3. Créer le dossier de travail
 WORKDIR /app
+
+# 4. Copier les fichiers du projet
 COPY . .
 
-# On installe les bibliothèques Python
+# 5. Installer les bibliothèques Python (ton requirements.txt)
 RUN pip install --no-cache-dir -r requirements.txt
 
-# On expose le port de Streamlit
+# 6. Exposer le port par défaut de Streamlit
 EXPOSE 8501
 
-# Commande pour lancer l'app
+# 7. Lancer l'application
 CMD ["streamlit", "run", "viralcut.py", "--server.port=8501", "--server.address=0.0.0.0"]
