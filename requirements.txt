@@ -1,23 +1,25 @@
-# --- COEUR DU SAAS (INTERFACE & LOGIQUE) ---
-streamlit==1.55.0
-python-dotenv==1.2.2
-requests==2.33.1
+# --- COEUR DU SAAS ---
+streamlit
+python-dotenv
+requests
 
 # --- MOTEUR VIDÉO & AUDIO ---
-moviepy==2.2.1
-imageio-ffmpeg==0.6.0
-ffmpeg-python==0.2.0
-yt-dlp==2026.3.17
-Pillow==11.3.0
+moviepy
+imageio-ffmpeg
+ffmpeg-python
+yt-dlp
+Pillow
 
 # --- INTELLIGENCE ARTIFICIELLE & DATA ---
-openai-whisper==20250625
-openai==2.30.0
-torch==2.11.0
-numpy==2.4.4
-pandas==2.3.3
-tiktoken==0.12.0
+openai-whisper
+openai
+torch
+torchvision
+torchaudio
+numpy
+pandas
+tiktoken
 
 # --- TRAITEMENT D'IMAGE & TRACKING ---
-opencv-python==4.13.0.92
-mediapipe==0.10.33
+opencv-python-headless
+mediapipe
