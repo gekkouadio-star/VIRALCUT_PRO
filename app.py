@@ -18,7 +18,8 @@ import config
 # --- CONFIGURATION INITIALE ---
 ssl._create_default_https_context = ssl._create_unverified_context
 for folder in ["exports", "inputs"]:
-    if not os.path.exists(folder): os.makedirs(folder)
+    if not os.path.exists(folder): 
+        os.makedirs(folder, exist_ok=True)
 
 st.set_page_config(page_title="ViralCut Pro Dashboard", page_icon="✂️", layout="wide")
 
@@ -51,7 +52,7 @@ st.markdown("""
         gap: 15px;
         margin-bottom: 25px;
         background-color: rgba(40, 167, 69, 0.1);
-        flex-wrap: wrap; /* Permet au nom de passer dessous sur petit écran */
+        flex-wrap: wrap; 
     }
     .green-header h1 {
         margin: 0;
@@ -69,11 +70,11 @@ st.markdown("""
     @media (max-width: 768px) {
         .green-header {
             padding: 10px;
-            flex-direction: column; /* Titre et Nom l'un sur l'autre sur mobile */
+            flex-direction: column; 
             gap: 5px;
         }
         .green-header h1 {
-            font-size: 1.4rem; /* Titre plus petit pour pas qu'il coupe */
+            font-size: 1.4rem; 
             text-align: center;
         }
         .developer-name {
@@ -81,7 +82,7 @@ st.markdown("""
             text-align: center;
         }
         .stButton>button {
-            height: 3.5em; /* Bouton plus gros pour le pouce */
+            height: 3.5em; 
         }
     }
     </style>
@@ -99,7 +100,6 @@ with st.sidebar:
     st.image("https://cdn-icons-png.flaticon.com/512/4406/4406114.png", width=80)
     st.title("VIRALCUT PRO")
     
-    # MENU DE NAVIGATION EN MAJUSCULE
     page = st.radio("NAVIGATION", ["STUDIO DE CRÉATION", "MES EXPORTS", "PARAMÈTRES IA"])
     
     st.divider()
@@ -110,7 +110,6 @@ with st.sidebar:
         target_duration = st.slider("Durée (sec)", 5, 60, config.DEFAULT_CLIP_DURATION)
         
         st.subheader("APPARENCE")
-        # Correction du bug de couleur (Force Hexa)
         default_color = config.FONT_COLOR if str(config.FONT_COLOR).startswith("#") else "#FFFF00"
         custom_color = st.color_picker("Couleur du texte", default_color)
         font_size = st.number_input("Taille police", 10, 200, config.FONT_SIZE)
@@ -119,7 +118,6 @@ with st.sidebar:
 
 # --- PAGE 1 : STUDIO DE CRÉATION ---
 if page == "STUDIO DE CRÉATION":
-    # TITRE ENCADRÉ EN VERT AVEC NOM DU DÉVELOPPEUR
     st.markdown('''
         <div class="green-header">
             <h1>🎬 STUDIO DE CRÉATION</h1>
@@ -141,63 +139,78 @@ if page == "STUDIO DE CRÉATION":
                 with open(video_input_path, "wb") as f: f.write(uploaded_file.getbuffer())
 
     with col_info:
-        st.info("💡 **ASTUCE :** L'IA détecte automatiquement les changements de sujet pour créer des transitions propres.")
+        st.info("💡 **ASTUCE :** L'IA détecte automatiquement les changements de sujet.")
+
+    # Zone pour les messages d'erreurs/succès stable
+    placeholder_msg = st.empty()
 
     if st.button("LANCER LA PRODUCTION"):
-        # LOGIQUE DE VÉRIFICATION
-        source_ready = (source_type == "Lien Web" and url_input) or (source_type == "Fichier Local" and uploaded_file)
+        source_ready = (source_type == "Lien Web" and url_input) or (source_type == "Fichier Local" and 'video_input_path' in locals())
         
         if not source_ready:
-            st.warning("VEUILLEZ SÉLECTIONNER UNE VIDÉO.")
+            placeholder_msg.warning("VEUILLEZ SÉLECTIONNER UNE VIDÉO.")
         else:
             start_proc = time.time()
-            with st.status("PRODUCTION EN COURS...", expanded=True) as status:
-                
-                # 1. DOWNLOAD
-                if source_type == "Lien Web":
-                    video_input_path = downloader.telecharger(url_input)
-                
-                # 2. TRANSCRIPTION
-                st.write("👂 ANALYSE VOCALE...")
-                words_data = transcriber.transcrire(video_input_path)
-                
-                # 3. INTELLIGENCE
-                st.write("🧠 DÉTECTION DES PÉPITES VIRALES...")
-                suggestions = intel.detecter_meilleurs_moments(words_data)[:num_clips]
+            try:
+                with st.status("PRODUCTION EN COURS...", expanded=True) as status:
+                    
+                    # 1. DOWNLOAD
+                    if source_type == "Lien Web":
+                        st.write("📥 TÉLÉCHARGEMENT DE LA SOURCE...")
+                        video_input_path = downloader.telecharger(url_input)
+                    
+                    # 2. TRANSCRIPTION
+                    st.write("👂 ANALYSE VOCALE (WHISPER IA)...")
+                    words_data = transcriber.transcrire(video_input_path)
+                    
+                    # 3. INTELLIGENCE
+                    st.write("🧠 DÉTECTION DES PÉPITES VIRALES...")
+                    suggestions = intel.detecter_meilleurs_moments(words_data)[:num_clips]
 
-                # 4. MONTAGE
-                st.write("🎥 RENDU DES CLIPS VERTICAUX...")
-                clip_source = VideoFileClip(video_input_path)
-                
-                grid = st.columns(2)
-                for i, moment in enumerate(suggestions):
-                    with grid[i % 2]:
-                        st.subheader(f"CLIP {i+1}")
-                        start_t, end_t = moment['start'], min(moment['start'] + target_duration, clip_source.duration)
+                    # 4. MONTAGE
+                    st.write("🎥 RENDU DES CLIPS VERTICAUX...")
+                    clip_source = VideoFileClip(video_input_path)
+                    
+                    # On prépare la grille de résultats APRES le rendu
+                    results_container = st.container()
+                    
+                    for i, moment in enumerate(suggestions):
+                        st.write(f"⚙️ TRAITEMENT DU CLIP {i+1}...")
+                        start_t = moment['start']
+                        end_t = min(moment['start'] + target_duration, clip_source.duration)
                         
-                        # PROCESSING (SUBCLIP + RESIZE + CROP)
+                        # PROCESSING
                         base = clip_source.subclipped(start_t, end_t).resized(height=config.VIDEO_HEIGHT)
                         base = base.cropped(x_center=base.w/2, y_center=base.h/2, width=config.VIDEO_WIDTH, height=config.VIDEO_HEIGHT)
                         
-                        # SOUS-TITRES AVEC NOUVELLE COULEUR
+                        # SOUS-TITRES
                         words_ext = [w.copy() for w in words_data if w['start'] >= start_t and w['end'] <= end_t]
-                        for w in words_ext: w['start'] -= start_t; w['end'] -= start_t
+                        for w in words_ext: 
+                            w['start'] -= start_t
+                            w['end'] -= start_t
                         
-                        # Génération des paroles via le moteur de design
                         subs = designer.generer_sous_titres(words_ext, config.VIDEO_WIDTH, config.VIDEO_HEIGHT)
                         
                         final = CompositeVideoClip([base] + subs)
-                        out = f"exports/viral_{int(time.time())}_{i+1}.mp4"
-                        final.write_videofile(out, fps=config.VIDEO_FPS, codec=config.VIDEO_CODEC, audio_codec="aac")
+                        out_name = f"viral_{int(time.time())}_{i+1}.mp4"
+                        out_path = os.path.join("exports", out_name)
                         
-                        st.video(out)
-                        st.download_button(f"TÉLÉCHARGER LE CLIP {i+1}", out, file_name=f"clip_{i+1}.mp4")
+                        final.write_videofile(out_path, fps=config.VIDEO_FPS, codec=config.VIDEO_CODEC, audio_codec="aac", temp_audiofile='temp-audio.m4a', remove_temp=True)
+                        
+                        with results_container:
+                            st.divider()
+                            st.subheader(f"✅ CLIP {i+1} PRÊT")
+                            st.video(out_path)
+                            with open(out_path, "rb") as f:
+                                st.download_button(f"📥 TÉLÉCHARGER LE CLIP {i+1}", f, file_name=out_name)
 
-                clip_source.close()
-                status.update(label=f"✅ PRODUCTION TERMINÉE EN {int(time.time()-start_proc)}S", state="complete")
-            st.balloons()
+                    clip_source.close()
+                    status.update(label=f"✅ PRODUCTION TERMINÉE EN {int(time.time()-start_proc)}S", state="complete")
+                st.balloons()
+            except Exception as e:
+                st.error(f"ERREUR LORS DE LA PRODUCTION : {e}")
 
-# --- PAGE 2 : MES EXPORTS (BIBLIOTHÈQUE) ---
+# --- PAGE 2 : MES EXPORTS ---
 elif page == "MES EXPORTS":
     st.header("📂 BIBLIOTHÈQUE DE VOS CRÉATIONS")
     files = [f for f in os.listdir("exports") if f.endswith(".mp4")]
@@ -206,19 +219,22 @@ elif page == "MES EXPORTS":
         st.write("AUCUN CLIP GÉNÉRÉ POUR LE MOMENT.")
     else:
         for f in reversed(files):
-            col_vid, col_del = st.columns([4, 1])
-            with col_vid:
-                st.text(f"FICHIER : {f}")
-                st.video(f"exports/{f}")
-            with col_del:
-                if st.button("🗑️ SUPPRIMER", key=f):
-                    os.remove(f"exports/{f}")
-                    st.rerun()
+            with st.container():
+                col_vid, col_del = st.columns([4, 1])
+                path = os.path.join("exports", f)
+                with col_vid:
+                    st.text(f"FICHIER : {f}")
+                    st.video(path)
+                with col_del:
+                    if st.button("🗑️ SUPPRIMER", key=f):
+                        os.remove(path)
+                        st.rerun()
+                st.divider()
 
 # --- PAGE 3 : PARAMÈTRES IA ---
 elif page == "PARAMÈTRES IA":
     st.header("CONFIGURATION SYSTÈME")
-    st.write("ICI VOUS POUVEZ CONFIGURER LES PARAMÈTRES PROFONDS DE L'APPLICATION.")
+    st.write("PARAMÈTRES AVANCÉS")
     st.toggle("ACTIVER LE RECADRAGE AUTOMATIQUE DES VISAGES (FACE-TRACKING)")
     st.toggle("GÉNÉRER DES EMOJIS AUTOMATIQUEMENT")
     st.selectbox("QUALITÉ D'EXPORT", ["720p (RAPIDE)", "1080p (STANDARD)", "4K (LENT)"])
